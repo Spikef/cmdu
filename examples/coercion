@@ -1,0 +1,30 @@
+#!/usr/bin/env node
+
+var app = require('../');
+
+function range(val) {
+    return val.split('..').map(Number);
+}
+
+function list(val) {
+    return val.split(',');
+}
+
+app.version = '0.0.1';
+
+app
+    .option('-i, --integer <n>', 'An integer argument', parseInt)
+    .option('-f, --float <n>', 'A float argument', parseFloat)
+    .option('-r, --range <a>..<b>', 'A range', range, [])
+    .option('-l, --list <items>', 'A list', list)
+    .option('-o, --optional [value]', 'An optional value', 'default value')
+    .option('-c, --collect <array>', 'A repeatable value', [])
+    .listen();
+
+console.log(' int: %j', app.options.integer);
+console.log(' float: %j', app.options.float);
+console.log(' optional: %j', app.options.optional);
+console.log(' range: %j..%j', app.options.range[0], app.options.range[1]);
+console.log(' list: %j', app.options.list);
+console.log(' collect: %j', app.options.collect);
+console.log(' args: %j', app.args);

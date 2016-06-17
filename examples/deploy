@@ -1,0 +1,53 @@
+#!/usr/bin/env node
+
+var app = require('../');
+
+app.version = '0.0.1';
+
+app
+    .command('* [env]')
+    .describe('env', 'environment, such as win, linux, osx')
+    .option('-C, --chdir [path]', 'change the working directory')
+    .option('-c, --config [path]', 'set config path. defaults to ./deploy.conf')
+    .option('-T, --tests', 'ignore test hook')
+    .action(function(env){
+        console.log('deploying "%s"', env);
+    });
+
+app
+    .command('setup [env]')
+    .describe('run setup commands for all envs')
+    .describe('env', 'environment, such as win, linux, osx')
+    .option("-s, --setup_mode [mode]", "Which setup mode to use")
+    .action(function(env, options){
+        var mode = options.setup_mode || "normal";
+        env = env || 'all';
+        console.log('setup for %s env(s) with %s mode', env, mode);
+    });
+
+app
+    .command('exec <cmd>')
+    .alias('ex')
+    .describe('execute the given remote cmd')
+    .option("-e, --exec_mode <mode>", "Which exec mode to use")
+    .action(function(cmd, options){
+        console.log('exec "%s" using %s mode', cmd, options.exec_mode);
+    });
+
+app.customHelp = function (command) {
+    if (command.name !== 'exec') return command.showHelp();
+
+    command.showHelp(function (message) {
+        message = [message].concat([
+            '  Examples:',
+            '',
+            '    $ deploy exec sequential',
+            '    $ deploy exec async',
+            ''
+        ]).join('\n');
+
+        return message;
+    })
+};
+
+app.listen();

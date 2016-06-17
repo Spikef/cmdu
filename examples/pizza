@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+
+var app = require('../');
+
+app.version = '0.0.1';
+
+app
+  .describe('An application for pizzas ordering')
+  .option('-p, --peppers', 'Add peppers')
+  .option('-P, --pineapple', 'Add pineapple')
+  .option('-b, --bbq', 'Add bbq sauce')
+  .option('-c, --cheese [type]', 'Add the specified type of cheese [marble]')
+  .listen();
+
+console.log('you ordered a pizza with:');
+if (app.options.peppers) console.log('  - peppers');
+if (app.options.pineapple) console.log('  - pineapple');
+if (app.options.bbq) console.log('  - bbq');
+
+var cheese = true === app.options.cheese
+  ? 'marble'
+  : app.options.cheese || 'no';
+
+console.log('  - %s cheese', cheese);
+console.log(app.args);

@@ -1,0 +1,31 @@
+{
+  "name": "cmdu",
+  "version": "1.0.0",
+  "description": "A comfortable way to create your command line app by nodejs.",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Spikef/cmdu.git"
+  },
+  "keywords": [
+    "command",
+    "cli"
+  ],
+  "author": {
+    "name": "Spikef"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Spikef/cmdu/issues"
+  },
+  "homepage": "https://github.com/Spikef/cmdu#readme",
+  "engines": {
+    "node": ">= 4.0"
+  },
+  "devDependencies": {
+    "mocha": "^2.5.3"
+  }
+}

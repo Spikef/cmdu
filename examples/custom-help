@@ -1,0 +1,28 @@
+#!/usr/bin/env node
+
+var app = require('../');
+
+app.version = '0.0.1';
+
+app
+  .option('-f, --foo', 'enable some foo')
+  .option('-b, --bar', 'enable some bar')
+  .option('-B, --baz', 'enable some baz');
+
+// must be before .listen() since the help is immediate
+
+app.customHelp = function (command) {
+    command.showHelp(function (message) {
+        message = [message].concat([
+            '  Examples:',
+            '',
+            '    $ custom-help --help',
+            '    $ custom-help -h',
+            ''
+        ]).join('\n');
+
+        return message;
+    })
+};
+
+app.listen();

@@ -368,6 +368,29 @@ Examples:
 
 ```
 
+## 显示帮助信息
+
+有两种方式可以手动显示帮助信息。
+
+```javascript
+var app = require('cmdu');
+
+app.version = '0.0.1';
+
+app
+    .command('help')
+    .describe('show help information for this command')
+    .action(function(options) {
+        this.showHelp();    // 显示当前命令的帮助信息
+    });
+
+app.showHelp();             // 显示默认命令的帮助信息
+
+app.listen();
+```
+
+## 示例
+
 你可以在[examples](https://github.com/Spikef/cmdu/tree/master/examples)目录中找到更多示例。这些示例都是修改自Commander模块的示例。
 
 ## License

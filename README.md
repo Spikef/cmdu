@@ -369,6 +369,29 @@ Examples:
 
 ```
 
+## Show Help
+
+There are two ways to show help information manually.
+
+```javascript
+var app = require('cmdu');
+
+app.version = '0.0.1';
+
+app
+    .command('help')
+    .describe('show help information for this command')
+    .action(function(options) {
+        this.showHelp();    // show help for current command
+    });
+
+app.showHelp();             // show help for default command
+
+app.listen();
+```
+
+## Demos
+
 More Demos can be found in the [examples](https://github.com/Spikef/cmdu/tree/master/examples) directory. These examples are modified from Commander.
 
 ## License

@@ -1,0 +1,16 @@
+#!/usr/bin/env node
+
+var app = require('..');
+
+app.version = '0.0.1';
+
+app
+    .describe('show help information for this command')
+    .option('-s, --show', 'display help information manually')
+    .action(function(options) {
+        if (options.show) this.showHelp();          // show help for current command
+    });
+
+if (!~app.args.indexOf('help')) app.showHelp();     // show help for default command
+
+app.listen();

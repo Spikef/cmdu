@@ -95,7 +95,8 @@ exports.option = function (define, description, parse, defaultValue) {
  * @param callback
  */
 exports.action = function (callback) {
-    commands[last_cmd].action = callback;
+    var command = commands[last_cmd];
+    command.action = callback.bind(command);
     return this;
 };
 
@@ -429,3 +430,7 @@ exports.command('*');
  * define a custom help method
  */
 exports.customHelp = null;
+
+exports.showHelp = function() {
+    commands['*'].showHelp();
+};

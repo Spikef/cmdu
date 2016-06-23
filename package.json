@@ -1,6 +1,6 @@
 {
   "name": "cmdu",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A comfortable way to create your command line app by nodejs.",
   "main": "index.js",
   "scripts": {
@@ -26,6 +26,7 @@
     "node": ">= 4.0"
   },
   "devDependencies": {
+    "chai": "^3.5.0",
     "mocha": "^2.5.3"
   }
 }

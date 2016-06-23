@@ -124,10 +124,11 @@ exports.use = function (file) {
 
 /**
  * listen the user input
+ * @param {Array} [argv]: process.argv
  */
-exports.listen = function () {
-    var argv = process.argv.slice(2);
-    var result = this.parseArgs(argv);
+exports.listen = function (argv) {
+    var args = (argv || process.argv).slice(2);
+    var result = this.parseArgs(args);
     var name = result.name;
 
     var command = commands[name];

@@ -95,6 +95,11 @@ exports.option = function (define, description, parse, defaultValue) {
  * @param callback
  */
 exports.action = function (callback) {
+    if (typeof callback !== 'function') {
+        console.error('Expect a function for the action!');
+        process.exit(1);
+    }
+
     var command = commands[last_cmd];
     command.action = callback.bind(command);
     return this;
@@ -105,6 +110,11 @@ exports.action = function (callback) {
  * @param {String} file
  */
 exports.use = function (file) {
+    if (typeof file !== 'string') {
+        console.error('Expect a path for the use method!');
+        process.exit(1);
+    }
+
     commands[last_cmd].action = function() {
         var work;
         if (module.parent && module.parent.filename) {
@@ -165,7 +175,7 @@ exports.listen = function (argv) {
  */
 exports.parseArgs = function (args) {
     var name, flag, value;
-    var ret = [], arg, index;
+    var rest = [], arg, index;
     var subs = [];
     var options = {};
     var command;
@@ -201,32 +211,12 @@ exports.parseArgs = function (args) {
         return { name: name, version: true };
     }
 
-    command.subs.forEach(function (sub) {
-        if (!sub.optional && (args.length === 0 || /^-/.test(args[0]))) {
-            var message = '  error: missing required argument "{0}"';
-            if (sub.description) message += '\n  {0}: ' + sub.description;
-            exports.throwError(0, message, sub.name);
-        } else if (sub.optional && args.length === 0) {
-            subs.push(sub.default);
-        } else if (sub.optional && /^-/.test(args[0])) {
-            subs.push(sub.default);
-        } else if (sub.ellipsis) {
-            var list = [];
-            while(args.length && !/^-/.test(args[0])) {
-                list.push(args.shift());
-            }
-            subs.push(list);
-        } else {
-            subs.push(args.shift());
-        }
-    });
-
     for (var i=0, len=args.length; i<len; i++) {
         arg = args[i];
 
         if (arg === '--') {
             // Honor option terminator
-            ret = args.slice(i);
+            rest = args.slice(i);
             break;
         } else if (/^-[a-z]+/i.test(arg)) {
             arg.substr(1).split('').forEach(function(alias) {
@@ -234,7 +224,7 @@ exports.parseArgs = function (args) {
                 if ((index = command._opts[alias]) !== undefined) {
                     option = command.options[index];
                     options[option.name] = null;
-                } else if (unknowns) {
+                } else if (!unknowns) {
                     unknowns = alias;
                 }
             });
@@ -262,18 +252,21 @@ exports.parseArgs = function (args) {
                 if (option.isArray) {
                     options[option.name] = options[option.name] || [];
                     options[option.name].push(arg);
+                } else if (option.isBoolean) {
+                    rest.push(arg);
+                    option = null;
                 } else {
                     options[option.name] = arg;
                     option = null;
                 }
             } else {
-                ret.push(arg);
+                rest.push(arg);
             }
         }
     }
     
     command.options.forEach(function (opt) {
-        if (!opt.optional && options[opt.name] === undefined && opt.default === undefined) {
+        if (!opt.optional && (options[opt.name] === undefined || options[opt.name] === null)) {
             var message = '  error: missing required option "{0}"';
             if (opt.description) message += '\n  {1}: ' + opt.description;
             exports.throwError(1, message, opt.flag, opt.name);
@@ -282,13 +275,15 @@ exports.parseArgs = function (args) {
         if (options[opt.name] === undefined) {
             if (opt.default !== undefined) {
                 options[opt.name] = opt.default;
-            } else {
+            } else if (opt.isBoolean) {
                 options[opt.name] = false;
+            } else {
+                options[opt.name] = null;
             }
         } else if (options[opt.name] === null) {
             if (opt.default !== undefined) {
                 options[opt.name] = opt.default;
-            } else {
+            } else if (opt.isBoolean) {
                 options[opt.name] = true;
             }
         } else {
@@ -303,8 +298,29 @@ exports.parseArgs = function (args) {
             }
         }
     });
+
+    command.subs.forEach(function (sub) {
+        if (!sub.optional && (rest.length === 0 || /^-/.test(rest[0]))) {
+            var message = '  error: missing required argument "{0}"';
+            if (sub.description) message += '\n  {0}: ' + sub.description;
+            exports.throwError(0, message, sub.name);
+        } else if (sub.optional && rest.length === 0) {
+            subs.push(sub.default || null);
+        } else if (sub.optional && /^-/.test(rest[0])) {
+            subs.push(sub.default || null);
+            if (!unknowns) unknowns = rest[0];
+        } else if (sub.ellipsis) {
+            var list = [];
+            while(rest.length && !/^-/.test(rest[0])) {
+                list.push(rest.shift());
+            }
+            subs.push(list);
+        } else {
+            subs.push(rest.shift());
+        }
+    });
     
-    this.args = ret;
+    this.args = rest;
     for (var o in options) {
         if (!options.hasOwnProperty(o)) continue;
         this.options[o] = options[o];
@@ -391,6 +407,12 @@ exports.throwError = function (type, message) {
     process.exit(1);
 };
 
+exports.whenExit = function (callback) {
+    if (!callback || typeof callback !== 'function') return;
+    
+    process.on('exit', callback);
+};
+
     /**
  * format string with following arguments
  * @returns {String}
@@ -433,5 +455,5 @@ exports.command('*');
 exports.customHelp = null;
 
 exports.showHelp = function() {
-    commands['*'].showHelp();
+    return commands['*'].showHelp();
 };

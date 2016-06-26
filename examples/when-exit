@@ -1,0 +1,9 @@
+#!/usr/bin/env node
+
+var app = require('..');
+
+app.version = '0.0.1';
+
+app.whenExit(function () {
+    console.log('Good bye!');
+});

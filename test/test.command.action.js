@@ -1,10 +1,9 @@
 var app = require('../'),
-    mocha = require('mocha'),
     chai = require('chai');
 
 var val = false;
 app
-    .command('info')
+    .command('cmd-action')
     .option('-C, --color', 'turn on color output')
     .action(function (options) {
         val = options.color;
@@ -12,11 +11,13 @@ app
 
 var assert = require('chai').assert;
 describe('action', function () {
-    it('should be false when no --color input', function () {
-        app.listen(['node', 'test', 'info', '--color']);
-        assert.equal(true, val);
-        
-        app.listen(['node', 'test', 'info']);
+    it('should be false when no --color', function () {
+        app.listen(['node', 'test', 'cmd-action']);
         assert.equal(false, val);
+    });
+
+    it('should be true when --color', function () {
+        app.listen(['node', 'test', 'cmd-action', '--color']);
+        assert.equal(true, val);
     });
 });

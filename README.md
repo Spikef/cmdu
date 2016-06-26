@@ -67,7 +67,7 @@ Short flags may be passed as a single arg, for example `-abc` is equivalent to `
 
 Long flags will be passed as the option name to the `options` object. Multi-word options such as "--template-engine" are camel-cased, becoming `app.options.templateEngine` etc.
 
-Option property is used to specify this option is `[optional]` or `<required>`. If user forget the required option, it will print an error information. Specially while you define the property as `[array]` or `<array>`, this option will be an array.
+Option property is used to specify this option is `[optional]` or `<required>`. If user forget the required option, it will print an error information. If user didn't pass any value to an optional option, the value would be the default value or null. Specially while you define the property as `[array]` or `<array>`, this option will be an array. If you didn't specify the option property, this option would be regarded as a boolean value.
 
 ```javascript
 #!/usr/bin/env node

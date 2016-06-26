@@ -31,18 +31,6 @@ describe('required option without value', function () {
 
         app.throwError = throwError;
     });
-
-    it('should throw error message when no --cheese', function () {
-        errorMessage = null;
-        app.listen(['node', 'test', 'cmd-option-required']);
-        assert.equal(errorExpected, errorMessage);
-
-        errorMessage = null;
-        app.listen(['node', 'test', 'cmd-option-required', '--cheese']);
-        assert.equal(errorExpected, errorMessage);
-
-        app.throwError = throwError;
-    });
 });
 
 function formatString() {

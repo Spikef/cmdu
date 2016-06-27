@@ -11,5 +11,6 @@ describe('allowUnknownOption', function () {
         app.allowUnknownOption = true;
         app.listen(['node', 'test', 'cmd-allow-unknown-options', '--none']);
         assert.equal(undefined, app.options.none);
+        app.allowUnknownOption = false;
     });
 });

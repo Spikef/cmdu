@@ -1,5 +1,11 @@
 # cmdu
 
+[![Build Status](https://travis-ci.org/Spikef/cmdu.svg?branch=master)](https://travis-ci.org/Spikef/cmdu)
+[![NPM Version](http://img.shields.io/npm/v/cmdu.svg?style=flat)](https://www.npmjs.org/package/cmdu)
+[![NPM Downloads](https://img.shields.io/npm/dm/cmdu.svg?style=flat)](https://www.npmjs.org/package/cmdu)
+[![cmdu starter](https://img.shields.io/badge/cmdu-starter-brightgreen.svg)](https://www.npmjs.org/package/cmdu-cli)
+
+
 A comfortable way to create your command line app by nodejs.
 
 [点此阅读中文文档](https://github.com/Spikef/cmdu/blob/master/README_CN.md)

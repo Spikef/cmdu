@@ -177,7 +177,7 @@ app.listen();
 
 ### 可变参数
 
-命令的最后一个参数可以是可变参数，并且只能是最后一个参数。为了实现这一点，你需要在参数名后面追加`...`。 下面是个示例：
+命令的最后一个参数可以是可变参数，并且只能是最后一个参数。为了实现这一点，你需要在参数名前面添加`...`。 下面是个示例：
 
 ```js
 #!/usr/bin/env node
@@ -187,7 +187,7 @@ var app = require('cmdu');
 app.version = '0.0.1';
 
 app
-  .command('rmdir <dir> [otherDirs...]')
+  .command('rmdir <dir> [...otherDirs]')
   .action(function (dir, otherDirs) {
     console.log('rmdir %s', dir);
     if (otherDirs) {
@@ -252,11 +252,15 @@ app.listen();
 
 ## action
 
-对`.action()`方法传入一个回调函数，用于响应用户输入该命令时的操作。定义的命令参数将依次作为回调函数的参数传入，回调函数的最后一个参数是一个json对象，保存了所有该命令的选项。
+对`.action()`方法传入一个回调函数或回调函数模块的路径，用于响应用户输入该命令时的操作。
 
-## use
+### 回调函数
 
-与`.action()`方法类似，`.use()`方法传入回调函数模块的路径。
+定义的命令参数将依次作为回调函数的参数传入，回调函数的最后一个参数是一个json对象，保存了所有该命令的选项。
+
+### 模块路径
+
+跟回调函数类似，只是将函数作为一个模块单独存放在一个文件中，同时传入文件路径作为参数。
 
 ```javascript
 #!/usr/bin/env node
@@ -267,14 +271,14 @@ app.version = '0.0.1';
 
 app
   .command('install <name>')
-  .use('./install');
+  .action('./install');
 
 app.listen();
 ```
 
 ## Git风格子命令
 
-当定义的子命令没有`action`或`use`来响应操作时，那么这个命令就将当作Git风格子命令。意味着你将使用单独的可执行文件来响应该命令的操作，就像`git(1)`和其他流行的命令行工具一样。
+当定义的子命令没有`action`来响应操作时，那么这个命令就将当作Git风格子命令。意味着你将使用单独的可执行文件来响应该命令的操作，就像`git(1)`和其他流行的命令行工具一样。
 
 `cmdu`将尝试在入口模块(例如`./examples/pm`)的目录中搜索包含命令前缀的可执行脚本文件，如`pm-install`，`pm-search`等。
 
@@ -336,8 +340,8 @@ app
 
 // must be before .listen() since the help is immediate
 
-app.customHelp = function (command) {
-    command.showHelp(function (message) {
+app.customHelp = function () {
+    this.showHelp(function (message) {
         message = [message].concat([
             '  Examples:',
             '',
@@ -386,11 +390,14 @@ app.version = '0.0.1';
 app
     .command('help')
     .describe('show help information for this command')
+    .option('-s --show', 'show help information or not')
     .action(function(options) {
         this.showHelp();    // 显示当前命令的帮助信息
     });
 
-app.showHelp();             // 显示默认命令的帮助信息
+if (!process.argv.slice(2).length) {
+    app.showHelp();         // 显示默认命令的帮助信息
+}
 
 app.listen();
 ```

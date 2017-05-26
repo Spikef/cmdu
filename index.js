@@ -39,11 +39,12 @@ exports.options = {};
 
 /**
  * define a new command
- * @param {String} define: such as `init <name>`
+ * @param {String} cmd: such as `init <name>`
+ * @param {String} [description]: description
  * @param {Object} [options]: extra arguments
  */
-exports.command = function (define, options) {
-    var command = new Command(define, options);
+exports.command = function (cmd, description, options) {
+    var command = new Command(cmd, description, options);
     last_cmd = command.name;
     commands[last_cmd] = command;
     if (command.name !== '*') {
@@ -79,56 +80,47 @@ exports.describe = function (cmd, description) {
 
 /**
  * define a option for the current command
- * @param define
- * @param description
- * @param [parse]
+ * @param {String} opt
+ * @param {String} [description]
+ * @param {Function} [parse]
  * @param [defaultValue]
  */
-exports.option = function (define, description, parse, defaultValue) {
-    var option = new Option(define, description, parse, defaultValue);
+exports.option = function (opt, description, parse, defaultValue) {
+    var option = new Option(opt, description, parse, defaultValue);
     commands[last_cmd].addOption(option);
     return this;
 };
 
 /**
  * use a function to handle the command
- * @param callback
+ * @param {Function | String} callback
  */
 exports.action = function (callback) {
-    if (typeof callback !== 'function') {
-        console.error('Expect a function for the action!');
+    var type = typeof callback;
+    if (type !== 'function' && type !== 'string') {
+        console.error('Expect a function/file for the action!');
         process.exit(1);
     }
 
     var command = commands[last_cmd];
-    command.action = callback.bind(command);
-    return this;
-};
 
-/**
- * use a CommonJS module to handle the command
- * @param {String} file
- */
-exports.use = function (file) {
-    if (typeof file !== 'string') {
-        console.error('Expect a path for the use method!');
-        process.exit(1);
-    }
-
-    commands[last_cmd].action = function() {
+    if (type === 'string') {
         var work;
+        var file = callback;
         if (module.parent && module.parent.filename) {
             work = path.dirname(module.parent.filename);
-        }else {
+        } else {
             work = process.cwd();
         }
 
         var method = require(path.resolve(work, file));
         if (typeof method === 'function') {
-            method.apply(method, arguments);
+            callback = method;
         }
-    };
-    
+    }
+
+    command.action = callback;
+
     return this;
 };
 
@@ -140,12 +132,18 @@ exports.listen = function (argv) {
     var args = (argv || process.argv).slice(2);
     var result = this.parseArgs(args);
     var name = result.name;
-
     var command = commands[name];
+
+    var context = {
+        name: command.name,
+        showHelp: function(fn) {
+            command.showHelp(fn);
+        }
+    };
     if (result.help) {
         if (!command.noHelp) {
             if (typeof this.customHelp === 'function') {
-                this.customHelp(command);
+                this.customHelp.apply(context);
             } else {
                 command.showHelp();
             }
@@ -154,12 +152,12 @@ exports.listen = function (argv) {
         process.stdout.write(exports.version + '\n');
         process.exit(0);
     } else {
-        var callback = commands[name].action;
+        var callback = command.action;
         if (typeof callback === 'function') {
             if (result.unknowns && !this.allowUnknownOption) {
                 exports.throwError(2, '  error: unknown option "{0}"', result.unknowns);
             } else {
-                callback.apply(callback, result.args);
+                callback.apply(context, result.args);
             }
         } else if (name !== '*') {
             this.execSubCommand();
@@ -300,14 +298,15 @@ exports.parseArgs = function (args) {
     });
 
     command.subs.forEach(function (sub) {
+        var defaultValue = sub.ellipsis ? [] : null;
         if (!sub.optional && (rest.length === 0 || /^-/.test(rest[0]))) {
             var message = '  error: missing required argument "{0}"';
             if (sub.description) message += '\n  {0}: ' + sub.description;
             exports.throwError(0, message, sub.name);
         } else if (sub.optional && rest.length === 0) {
-            subs.push(sub.default || null);
+            subs.push(sub.default || defaultValue);
         } else if (sub.optional && /^-/.test(rest[0])) {
-            subs.push(sub.default || null);
+            subs.push(sub.default || defaultValue);
             if (!unknowns) unknowns = rest[0];
         } else if (sub.ellipsis) {
             var list = [];
@@ -319,7 +318,7 @@ exports.parseArgs = function (args) {
             subs.push(rest.shift());
         }
     });
-    
+
     this.args = rest;
     for (var o in options) {
         if (!options.hasOwnProperty(o)) continue;

@@ -4,7 +4,7 @@ var app = require('../'),
 var args = [];
 
 app
-    .command('cmd-variadic <file...>')
+    .command('cmd-variadic <...file>')
     .option('-t, --test', 'a optional test option')
     .action(function (file) {
         args = file;

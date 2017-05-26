@@ -5,12 +5,15 @@ var app = require('..');
 app.version = '0.0.1';
 
 app
+    .command('help')
     .describe('show help information for this command')
-    .option('-s, --show', 'display help information manually')
+    .option('-s --show', 'show help information or not')
     .action(function(options) {
-        if (options.show) this.showHelp();          // show help for current command
+        this.showHelp();          // show help for current command
     });
 
-if (!~app.args.indexOf('help')) app.showHelp();     // show help for default command
+if (!process.argv.slice(2).length) {
+    app.showHelp();     // show help for default command
+}
 
 app.listen();

@@ -11,8 +11,8 @@ app
 
 // must be before .listen() since the help is immediate
 
-app.customHelp = function (command) {
-    command.showHelp(function (message) {
+app.customHelp = function () {
+    this.showHelp(function (message) {
         message = [message].concat([
             '  Examples:',
             '',

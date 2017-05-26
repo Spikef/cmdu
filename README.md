@@ -180,7 +180,7 @@ Square brackets (e.g. `[env]`) indicate optional input.
 
 ### Variadic arguments
 
-The last argument of a command can be variadic, and only the last argument.  To make an argument variadic you have to append `...` to the argument name.  Here is an example:
+The last argument of a command can be variadic, and only the last argument.  To make an argument variadic you have to prepend `...` to the argument name.  Here is an example:
 
 ```js
 #!/usr/bin/env node
@@ -190,7 +190,7 @@ var app = require('cmdu');
 app.version = '0.0.1';
 
 app
-  .command('rmdir <dir> [otherDirs...]')
+  .command('rmdir <dir> [...otherDirs]')
   .action(function (dir, otherDirs) {
     console.log('rmdir %s', dir);
     if (otherDirs) {
@@ -255,11 +255,15 @@ The `.describe()` method is used for adding description for sub command and argu
 
 ## action
 
-The `.action()` method is a callback function to handle this command, the defined command arguments are passed in, and the last argument is a json object contains all options.
+The `.action()` method uses a callback function or it's file path to handle this command.
+ 
+### callback function
 
-## use
+The defined command arguments are passed in, and the last argument is a json object contains all options.
 
-Mostly like the `.action()` method, the `.use()` method is also a callback function to handle this command, except that the argument is the function module file path.
+## file path
+
+Mostly like the callback function, you can also use the function module file path as the argument.
 
 ```javascript
 #!/usr/bin/env node
@@ -270,14 +274,14 @@ app.version = '0.0.1';
 
 app
   .command('install <name>')
-  .use('./install');
+  .action('./install');
 
 app.listen();
 ```
 
 ## Git-style sub-commands
 
-When a command is defined without `action` nor `use`, this command will be treated as a git-style sub-command. This tells `cmdu` that you're going to use separate executables for sub-commands, much like `git(1)` and other popular tools.
+When a command is defined without `action`, this command will be treated as a git-style sub-command. This tells `cmdu` that you're going to use separate executables for sub-commands, much like `git(1)` and other popular tools.
 The `cmdu` will try to search the executables in the directory of the entry script (like `./examples/pm`) with the name `app-command`, like `pm-install`, `pm-search`.
 
 If the program is designed to be installed globally, make sure the executables have proper modes, like `755`.
@@ -338,8 +342,8 @@ app
 
 // must be before .listen() since the help is immediate
 
-app.customHelp = function (command) {
-    command.showHelp(function (message) {
+app.customHelp = function () {
+    this.showHelp(function (message) {
         message = [message].concat([
             '  Examples:',
             '',
@@ -388,11 +392,14 @@ app.version = '0.0.1';
 app
     .command('help')
     .describe('show help information for this command')
+    .option('-s --show', 'show help information or not')
     .action(function(options) {
         this.showHelp();    // show help for current command
     });
 
-app.showHelp();             // show help for default command
+if (!process.argv.slice(2).length) {
+    app.showHelp();         // show help for default command
+}
 
 app.listen();
 ```

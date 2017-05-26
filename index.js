@@ -136,6 +136,7 @@ exports.listen = function (argv) {
 
     var context = {
         name: command.name,
+        setStyle: command.setStyle,
         showHelp: function(fn) {
             command.showHelp(fn);
         }

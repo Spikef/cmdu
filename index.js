@@ -113,7 +113,7 @@ exports.option = function (opt, description, parse, defaultValue) {
 exports.action = function (callback) {
     var type = typeof callback;
     if (type !== 'function' && type !== 'string') {
-        throwError(language.error.expectFunOrStr);
+        exports.throwError(language.error.expectFunOrStr);
         process.exit(1);
     }
 
@@ -172,7 +172,7 @@ exports.listen = function (argv) {
         var callback = command.action;
         if (typeof callback === 'function') {
             if (result.unknowns && !this.allowUnknownOption) {
-                throwError(language.error.unknownOption, result.unknowns);
+                exports.throwError(language.error.unknownOption, result.unknowns);
             } else {
                 callback.apply(context, result.args);
             }
@@ -284,7 +284,7 @@ exports.parseArgs = function (args) {
         if (!opt.optional && (options[opt.name] === undefined || options[opt.name] === null)) {
             var message = language.error.requiredOption;
             if (opt.description) message += '\n{1}: ' + opt.description;
-            throwError(message, opt.flag, opt.name);
+            exports.throwError(message, opt.flag, opt.name);
         }
 
         if (options[opt.name] === undefined) {
@@ -319,7 +319,7 @@ exports.parseArgs = function (args) {
         if (!sub.optional && (rest.length === 0 || /^-/.test(rest[0]))) {
             var message = language.error.requiredArgument;
             if (sub.description) message += '\n{0}: ' + sub.description;
-            throwError(message, sub.name);
+            exports.throwError(message, sub.name);
         } else if (sub.optional && rest.length === 0) {
             subs.push(sub.default || defaultValue);
         } else if (sub.optional && /^-/.test(rest[0])) {
@@ -401,9 +401,9 @@ exports.execSubCommand = function () {
     proc.on('close', process.exit.bind(process));
     proc.on('error', function(err) {
         if (err.code == 'ENOENT') {
-            throwError(language.error.notExist, bin);
+            exports.throwError(language.error.notExist, bin);
         } else if (err.code == 'EACCES') {
-            throwError(language.error.notExecutable, bin);
+            exports.throwError(language.error.notExecutable, bin);
         }
         process.exit(1);
     });
@@ -436,7 +436,7 @@ function throwError(message) {
 function formatString() {
     if (arguments.length === 1) {
         return String(arguments[0]);
-    } else if (arguments.length >1) {
+    } else if (arguments.length > 1) {
         var args = Array.prototype.slice.call(arguments, 1);
         return String(arguments[0]).replace(/{(\d+)}/g, function ($0, $1) {
             return args[$1] || $0;

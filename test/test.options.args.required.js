@@ -7,9 +7,10 @@ var throwError = app.throwError;
 var errorMessage = null;
 var errorExpected = '  error: missing required option "--cheese"\n  cheese: optionally specify the type of cheese';
 
-app.throwError = function (type, message) {
-    var args = Array.prototype.slice.call(arguments, 1);
+app.throwError = function (message) {
+    var args = Array.prototype.slice.call(arguments);
     message = formatString.apply(null, args);
+    message = message.split('\n').map(function(s) { return '  ' + s }).join('\n');
     errorMessage = message;
 };
 
@@ -36,9 +37,9 @@ describe('required option without value', function () {
 function formatString() {
     if (arguments.length === 1) {
         return String(arguments[0]);
-    } else if (arguments.length >1) {
+    } else if (arguments.length > 1) {
         var args = Array.prototype.slice.call(arguments, 1);
-        return String(arguments[0]).replace(/\{(\d+)}/g, function ($0, $1) {
+        return String(arguments[0]).replace(/{(\d+)}/g, function ($0, $1) {
             return args[$1] || $0;
         })
     } else {

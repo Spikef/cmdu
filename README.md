@@ -7,7 +7,7 @@
 [![cmdu starter](https://img.shields.io/badge/cmdu-starter-brightgreen.svg)](https://www.npmjs.org/package/cmdu-cli)
 
 
-A comfortable way to create your command line app by nodejs.
+A comfortable way to create your command line app in `node.js`.
 
 [点此阅读中文文档](https://github.com/Spikef/cmdu/blob/master/README_CN.md)
 
@@ -402,6 +402,18 @@ if (!process.argv.slice(2).length) {
 }
 
 app.listen();
+```
+
+## Multiple language support
+
+You can set the language as you like. You may want to get more info from the `language` directory.
+
+```javascript
+// a predefined language name
+app.language('zh-CN');     // can be 'zh-CN, en-US'
+
+// or full language object
+app.language({});
 ```
 
 ## Demos

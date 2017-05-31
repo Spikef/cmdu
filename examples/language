@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+
+var app = require('../');
+
+app.version = '0.0.1';
+
+app.language('zh-CN');
+
+app
+    .describe('This is a test command')
+    .action(function() {
+
+    });
+
+app
+    .command('test <b>', 'test info')
+    .describe('b', 'b info')
+    .option('-f, --f <n>', 'f info')
+    .action(function() {
+
+    });
+
+app.listen();

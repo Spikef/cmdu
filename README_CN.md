@@ -6,7 +6,7 @@
 [![NPM Downloads](https://img.shields.io/npm/dm/cmdu.svg?style=flat)](https://www.npmjs.org/package/cmdu)
 [![cmdu starter](https://img.shields.io/badge/cmdu-starter-brightgreen.svg)](https://www.npmjs.org/package/cmdu-cli)
 
-让我们一起愉快地写nodejs命令行工具吧!
+让我们一起愉快地写`node.js`命令行工具吧!
 
 ## 安装
 
@@ -400,6 +400,18 @@ if (!process.argv.slice(2).length) {
 }
 
 app.listen();
+```
+
+## 多语言支持
+
+你可以自定义语言, 预定义语言可以在`language`目录中找到。
+
+```javascript
+// 使用预定义的语言名称
+app.language('zh-CN');     // 可以为 'zh-CN, en-US'
+
+// 或者一个完整的语言对象
+app.language({});
 ```
 
 ## 示例

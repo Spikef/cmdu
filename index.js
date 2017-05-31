@@ -6,6 +6,7 @@
 var fs = require('fs');
 var path = require('path');
 var spawn = require('child_process').spawn;
+var language = require('./language');
 
 var Command = require('./lib/command');
 var Option = require('./lib/option');
@@ -38,6 +39,15 @@ exports.args = [];
 exports.options = {};
 
 /**
+ * set language
+ * @param {String|Object} lan
+ */
+exports.language = function(lan) {
+    language.setLan(lan);
+    exports.command('*');
+};
+
+/**
  * define a new command
  * @param {String} cmd: such as `init <name>`
  * @param {String} [description]: description
@@ -48,11 +58,11 @@ exports.command = function (cmd, description, options) {
     last_cmd = command.name;
     commands[last_cmd] = command;
     if (command.name !== '*') {
-        this.option('-h, --help', 'output the help information');
+        this.option('-h, --help', language.help.message.help);
         commands['*'].cmds.push(command);
     } else {
-        this.option('-h, --help', 'output the help information');
-        this.option('-v, --version', 'output the version number');
+        this.option('-h, --help', language.help.message.help);
+        this.option('-v, --version', language.help.message.version);
     }
 
     return this;
@@ -98,7 +108,7 @@ exports.option = function (opt, description, parse, defaultValue) {
 exports.action = function (callback) {
     var type = typeof callback;
     if (type !== 'function' && type !== 'string') {
-        console.error('Expect a function/file for the action!');
+        throwError(language.error.expectFunOrStr);
         process.exit(1);
     }
 
@@ -137,6 +147,7 @@ exports.listen = function (argv) {
     var context = {
         name: command.name,
         setStyle: command.setStyle,
+        language: language,
         showHelp: function(fn) {
             command.showHelp(fn);
         }
@@ -156,7 +167,7 @@ exports.listen = function (argv) {
         var callback = command.action;
         if (typeof callback === 'function') {
             if (result.unknowns && !this.allowUnknownOption) {
-                exports.throwError(2, '  error: unknown option "{0}"', result.unknowns);
+                throwError(language.error.unknownOption, result.unknowns);
             } else {
                 callback.apply(context, result.args);
             }
@@ -266,9 +277,9 @@ exports.parseArgs = function (args) {
     
     command.options.forEach(function (opt) {
         if (!opt.optional && (options[opt.name] === undefined || options[opt.name] === null)) {
-            var message = '  error: missing required option "{0}"';
-            if (opt.description) message += '\n  {1}: ' + opt.description;
-            exports.throwError(1, message, opt.flag, opt.name);
+            var message = language.error.requiredOption;
+            if (opt.description) message += '\n{1}: ' + opt.description;
+            throwError(message, opt.flag, opt.name);
         }
 
         if (options[opt.name] === undefined) {
@@ -301,9 +312,9 @@ exports.parseArgs = function (args) {
     command.subs.forEach(function (sub) {
         var defaultValue = sub.ellipsis ? [] : null;
         if (!sub.optional && (rest.length === 0 || /^-/.test(rest[0]))) {
-            var message = '  error: missing required argument "{0}"';
-            if (sub.description) message += '\n  {0}: ' + sub.description;
-            exports.throwError(0, message, sub.name);
+            var message = language.error.requiredArgument;
+            if (sub.description) message += '\n{0}: ' + sub.description;
+            throwError(message, sub.name);
         } else if (sub.optional && rest.length === 0) {
             subs.push(sub.default || defaultValue);
         } else if (sub.optional && /^-/.test(rest[0])) {
@@ -334,12 +345,13 @@ exports.parseArgs = function (args) {
  * this method is modified from commander.js
  */
 exports.execSubCommand = function () {
+    var ext = '.js';
     var args = process.argv.slice(1);
 
     // current exec script file
     var file = args.shift();
     // name of the sub command, like `pm-install`
-    var bin = path.basename(file, '.js') + '-' + args[0];
+    var bin = path.basename(file, ext) + '-' + args[0];
 
     // In case of globally installed, get the base dir where executable sub command file should be located at
     var link = readLink(file);
@@ -356,8 +368,8 @@ exports.execSubCommand = function () {
 
     // whether bin file is a js script with explicit `.js` extension
     var isExplicitJS = false;
-    if (fs.existsSync(localBin + '.js')) {
-        bin = localBin + '.js';
+    if (fs.existsSync(localBin + ext)) {
+        bin = localBin + ext;
         isExplicitJS = true;
     } else if (fs.existsSync(localBin)) {
         bin = localBin;
@@ -383,10 +395,10 @@ exports.execSubCommand = function () {
 
     proc.on('close', process.exit.bind(process));
     proc.on('error', function(err) {
-        if (err.code == "ENOENT") {
-            console.error('\n  %s(1) does not exist, try --help\n', bin);
-        } else if (err.code == "EACCES") {
-            console.error('\n  %s(1) not executable. try chmod or run with root\n', bin);
+        if (err.code == 'ENOENT') {
+            throwError(language.error.notExist, bin);
+        } else if (err.code == 'EACCES') {
+            throwError(language.error.notExecutable, bin);
         }
         process.exit(1);
     });
@@ -394,18 +406,9 @@ exports.execSubCommand = function () {
 
 /**
  * print error message on terminal
- *   type = 0: missing required argument
- *   type = 1: missing required option
- *   type = 2: unknown option
- * @param type: error type
  * @param message
  */
-exports.throwError = function (type, message) {
-    var args = Array.prototype.slice.call(arguments, 1);
-    message = formatString.apply(null, args);
-    console.error('\n' + message + '\n');
-    process.exit(1);
-};
+exports.throwError = throwError;
 
 exports.whenExit = function (callback) {
     if (!callback || typeof callback !== 'function') return;
@@ -413,7 +416,15 @@ exports.whenExit = function (callback) {
     process.on('exit', callback);
 };
 
-    /**
+function throwError(message) {
+    var args = Array.prototype.slice.call(arguments);
+    message = formatString.apply(null, args);
+    message = message.split('\n').map(function(s) { return '  ' + s }).join('\n');
+    console.error('\n' + message + '\n');
+    process.exit(1);
+}
+
+/**
  * format string with following arguments
  * @returns {String}
  */
@@ -422,7 +433,7 @@ function formatString() {
         return String(arguments[0]);
     } else if (arguments.length >1) {
         var args = Array.prototype.slice.call(arguments, 1);
-        return String(arguments[0]).replace(/\{(\d+)}/g, function ($0, $1) {
+        return String(arguments[0]).replace(/{(\d+)}/g, function ($0, $1) {
             return args[$1] || $0;
         })
     } else {

@@ -45,6 +45,7 @@ exports.options = {};
 exports.language = function(lan) {
     language.setLan(lan);
     exports.command('*');
+    return this;
 };
 
 /**
@@ -52,6 +53,7 @@ exports.language = function(lan) {
  * @param {String} cmd: such as `init <name>`
  * @param {String} [description]: description
  * @param {Object} [options]: extra arguments
+ * @returns {exports}
  */
 exports.command = function (cmd, description, options) {
     var command = new Command(cmd, description, options);
@@ -71,6 +73,7 @@ exports.command = function (cmd, description, options) {
 /**
  * define an alias name for command
  * @param name
+ * @returns {exports}
  */
 exports.alias = function (name) {
     commands[last_cmd].alias(name);
@@ -82,6 +85,7 @@ exports.alias = function (name) {
  * add description for command or sub command
  * @param {String} [cmd] - sub command name
  * @param {String} description
+ * @returns {exports}
  */
 exports.describe = function (cmd, description) {
     commands[last_cmd].addMessage(cmd, description);
@@ -94,6 +98,7 @@ exports.describe = function (cmd, description) {
  * @param {String} [description]
  * @param {Function} [parse]
  * @param [defaultValue]
+ * @returns {exports}
  */
 exports.option = function (opt, description, parse, defaultValue) {
     var option = new Option(opt, description, parse, defaultValue);

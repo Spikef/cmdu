@@ -343,9 +343,13 @@ app
 // must be before .listen() since the help is immediate
 
 app.customHelp = function () {
+    var example;
+    example = this.language.help.title.example;
+    example = this.setStyle(example, 'bold', 'underline');
+
     this.showHelp(function (message) {
         message = [message].concat([
-            '  Examples:',
+            '  ' + example,
             '',
             '    $ custom-help --help',
             '    $ custom-help -h',
@@ -353,7 +357,7 @@ app.customHelp = function () {
         ]).join('\n');
 
         return message;
-    })
+    });
 };
 
 app.listen();

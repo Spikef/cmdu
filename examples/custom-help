@@ -4,6 +4,8 @@ var app = require('../');
 
 app.version = '0.0.1';
 
+app.language('zh-CN');
+
 app
   .option('-f, --foo', 'enable some foo')
   .option('-b, --bar', 'enable some bar')
@@ -26,7 +28,7 @@ app.customHelp = function () {
         ]).join('\n');
 
         return message;
-    })
+    });
 };
 
 app.listen();

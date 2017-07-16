@@ -279,7 +279,7 @@ exports.parseArgs = function (args) {
             }
         }
     }
-    
+
     command.options.forEach(function (opt) {
         if (!opt.optional && (options[opt.name] === undefined || options[opt.name] === null)) {
             var message = language.error.requiredOption;
@@ -288,7 +288,7 @@ exports.parseArgs = function (args) {
         }
 
         if (options[opt.name] === undefined) {
-            if (opt.isBoolean && opt.default === true && !!~args.indexOf('--no-' + opt.name)) {
+            if (opt.noFlag && !!~args.indexOf(opt.noFlag)) {
                 options[opt.name] = false;
             } else if (opt.default !== undefined) {
                 options[opt.name] = opt.default;
@@ -343,7 +343,7 @@ exports.parseArgs = function (args) {
         if (!options.hasOwnProperty(o)) continue;
         this.options[o] = options[o];
     }
-    
+
     return {name: name, args: subs.concat([options]), unknowns: unknowns};
 };
 
@@ -419,7 +419,7 @@ exports.throwError = throwError;
 
 exports.whenExit = function (callback) {
     if (!callback || typeof callback !== 'function') return;
-    
+
     process.on('exit', callback);
 };
 

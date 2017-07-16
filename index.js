@@ -288,7 +288,9 @@ exports.parseArgs = function (args) {
         }
 
         if (options[opt.name] === undefined) {
-            if (opt.default !== undefined) {
+            if (opt.isBoolean && opt.default === true && !!~args.indexOf('--no-' + opt.name)) {
+                options[opt.name] = false;
+            } else if (opt.default !== undefined) {
                 options[opt.name] = opt.default;
             } else if (opt.isBoolean) {
                 options[opt.name] = false;

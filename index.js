@@ -3,475 +3,130 @@
  * A comfortable way to create your command line app.
  */
 
-var fs = require('fs');
-var path = require('path');
-var spawn = require('child_process').spawn;
+var log = require('./lib/log');
+var utils = require('./lib/utils');
+var Command = require('./lib/command');
 var language = require('./language');
 
-var Command = require('./lib/command');
-var Option = require('./lib/option');
+var Cmdu = function() {
+    this.log = log;
+    this.name = null;
+    this.version = null;
+    this.commands = {};
+    this.allowUnknowns = false;
 
-var commands = {};
-var last_cmd = '*';
-var alias_cmd = {};
+    this.command();
 
-/**
- * application version, writable
- */
-exports.version = require('./package.json').version;
-
-/**
- * if throw error while pushed a unknown argument
- * @type {boolean}
- */
-exports.allowUnknownOption = false;
-
-/**
- * the remaining argv
- * @type {Array}
- */
-exports.args = [];
-
-/**
- * the passed options
- * @type {{}}
- */
-exports.options = {};
-
-/**
- * set language
- * @param {String|Object} lan
- */
-exports.language = function(lan) {
-    language.setLan(lan);
-    exports.command('*');
-    return this;
+    Object.defineProperty(this, 'language', {
+        set: function(lan) {
+            language.setLan(lan);
+        }
+    });
 };
 
 /**
  * define a new command
- * @param {String} cmd: such as `init <name>`
- * @param {String} [description]: description
- * @param {Object} [options]: extra arguments
- * @returns {exports}
+ * @param {string} [cmd] - such as `init <name>`
+ * @param {string} [description] - description
+ * @param {Object} [options] - extra arguments
+ * @param {string} [options.description] - description
+ * @param {boolean} [options.noHelp=false] - ignore this command when show the global help
+ * @param {boolean} [options.isBase=false] - not a real command, won't execute, and noHelp=true
+ * @param {string[]} [options.mixins] - mixins some existing commands' options
+ * @returns {Command}
  */
-exports.command = function (cmd, description, options) {
+Cmdu.prototype.command = function(cmd, description, options) {
     var command = new Command(cmd, description, options);
-    last_cmd = command.name;
-    commands[last_cmd] = command;
-    if (command.name !== '*') {
-        this.option('-h, --help', language.help.message.help);
-        commands['*'].cmds.push(command);
+    this.commands[command.name] = command;
+    if (command.name !== '*' && !command.__noHelp__ && !command.__isBase__) {
+        this.commands['*'].__children__.push(command);
+    }
+
+    var that = this;
+    Object.defineProperties(command, {
+        'commands': {
+            enumerable: false,
+            configurable: false,
+            get: function() {
+                return that.commands;
+            }
+        },
+        'allowUnknowns': {
+            enumerable: false,
+            configurable: false,
+            get: function() {
+                return that.allowUnknowns;
+            }
+        }
+    });
+
+    return command;
+};
+
+/**
+ * extends a existing command
+ * @param {string} [cmd] - such as `init <name>`
+ * @param {string} [description] - description
+ * @param {Object} [options] - extra arguments
+ * @param {string} [options.description] - description
+ * @param {boolean} [options.noHelp=false] - ignore this command when show the global help
+ * @param {boolean} [options.isBase=false] - not a real command, won't execute, and noHelp=true
+ * @param {string[]} [options.mixins] - mixins some existing commands' options
+ * @returns {Command}
+ */
+Cmdu.prototype.extends = function(cmd, description, options) {
+    var command;
+    var result = Command.resolve(cmd, description, options);
+    if (command = this.commands[result.name]) {
+        command._extends(result);
+        return command;
     } else {
-        this.option('-h, --help', language.help.message.help);
-        this.option('-v, --version', language.help.message.version);
+        return this.command(cmd, description, options);
+    }
+};
+
+/**
+ * get the global source command
+ * @returns {string}
+ */
+Cmdu.prototype.toSource = function() {
+    if (!this._source) {
+        var args = process.argv.slice(2);
+        var name = this.name || utils.basename(process.argv[1]);
+        this._source = name + args.join(' ');
     }
 
-    return this;
-};
-
-/**
- * define an alias name for command
- * @param name
- * @returns {exports}
- */
-exports.alias = function (name) {
-    commands[last_cmd].alias(name);
-    alias_cmd[name] = last_cmd;
-    return this;
-};
-
-/**
- * add description for command or sub command
- * @param {String} [cmd] - sub command name
- * @param {String} description
- * @returns {exports}
- */
-exports.describe = function (cmd, description) {
-    commands[last_cmd].addMessage(cmd, description);
-    return this;
-};
-
-/**
- * define a option for the current command
- * @param {String} opt
- * @param {String} [description]
- * @param {Function} [parse]
- * @param [defaultValue]
- * @returns {exports}
- */
-exports.option = function (opt, description, parse, defaultValue) {
-    var option = new Option(opt, description, parse, defaultValue);
-    commands[last_cmd].addOption(option);
-    return this;
-};
-
-/**
- * use a function to handle the command
- * @param {Function | String} callback
- */
-exports.action = function (callback) {
-    var type = typeof callback;
-    if (type !== 'function' && type !== 'string') {
-        exports.throwError(language.error.expectFunOrStr);
-        process.exit(1);
-    }
-
-    var command = commands[last_cmd];
-
-    if (type === 'string') {
-        var work;
-        var file = callback;
-        if (module.parent && module.parent.filename) {
-            work = path.dirname(module.parent.filename);
-        } else {
-            work = process.cwd();
-        }
-
-        var method = require(path.resolve(work, file));
-        if (typeof method === 'function') {
-            callback = method;
-        }
-    }
-
-    command.action = callback;
-
-    return this;
+    return this._source;
 };
 
 /**
  * listen the user input
  * @param {Array} [argv]: process.argv
  */
-exports.listen = function (argv) {
-    var args = (argv || process.argv).slice(2);
-    var result = this.parseArgs(args);
-    var name = result.name;
-    var command = commands[name];
+Cmdu.prototype.listen = function(argv) {
+    argv = argv || process.argv;
+    var cmd = argv[2] || '*';
+    if (cmd !== '*') {
+        cmd = '*';
 
-    var context = {
-        name: command.name,
-        setStyle: command.setStyle,
-        language: language,
-        showHelp: function(fn) {
-            command.showHelp(fn);
-        }
-    };
-    if (result.help) {
-        if (!command.noHelp) {
-            if (typeof this.customHelp === 'function') {
-                this.customHelp.apply(context);
-            } else {
-                command.showHelp();
+        for (var i in this.commands) {
+            if (!this.commands.hasOwnProperty(i)) continue;
+            if (~this.commands[i].aliases.indexOf(argv[2])) {
+                if (!this.commands[i].__isBase__) {
+                    cmd = this.commands[i].aliases[0];
+                }
+                break;
             }
         }
-    } else if (result.version) {
-        process.stdout.write(exports.version + '\n');
+    }
+
+    if (argv.length === 3 && (/^-v|--version$/.test(argv[2]))) {
+        console.log(this.version);
         process.exit(0);
     } else {
-        var callback = command.action;
-        if (typeof callback === 'function') {
-            if (result.unknowns && !this.allowUnknownOption) {
-                exports.throwError(language.error.unknownOption, result.unknowns);
-            } else {
-                callback.apply(context, result.args);
-            }
-        } else if (name !== '*') {
-            this.execSubCommand();
-        }
+        var args = argv.slice(cmd === '*' ? 2 : 3);
+        this.commands[cmd].execute(args);
     }
 };
 
-/**
- * parse process arguments
- * @param args
- * @returns {{name: *, [args]: Array.<*>, [help]: boolean, [version]: boolean, [unknowns]: string|boolean}}
- * @private
- */
-exports.parseArgs = function (args) {
-    var name, flag, value;
-    var rest = [], arg, index;
-    var subs = [];
-    var options = {};
-    var command;
-    var option;
-    var unknowns = false;
-
-    if (!args || !args.length || !commands[args[0]]) {
-        if ((name = alias_cmd[args[0]]) === undefined) {
-            name = '*';
-        } else {
-            args.shift();
-        }
-    }else{
-        name = args.shift();
-    }
-
-    command = commands[name];
-
-    var alias_help = null, alias_version = null;
-    if ((index = command._opts['--help']) !== undefined) {
-        alias_help = command.options[index].alias || null;
-    }
-
-    if ((index = command._opts['--version']) !== undefined) {
-        alias_version = command.options[index].alias || null;
-    }
-
-    if (!!(~args.indexOf(alias_help) || ~args.indexOf('--help'))) {
-        return { name: name, help: true };
-    }
-
-    if (args.length === 1 && (args[0] === alias_version || args[0] === '--version')) {
-        return { name: name, version: true };
-    }
-
-    for (var i=0, len=args.length; i<len; i++) {
-        arg = args[i];
-
-        if (arg === '--') {
-            // Honor option terminator
-            rest = args.slice(i);
-            break;
-        } else if (/^-[a-z]+/i.test(arg)) {
-            arg.substr(1).split('').forEach(function(alias) {
-                alias = '-' + alias;
-                if ((index = command._opts[alias]) !== undefined) {
-                    option = command.options[index];
-                    options[option.name] = null;
-                } else if (!unknowns) {
-                    unknowns = alias;
-                }
-            });
-        } else if (/^--/.test(arg)) {
-            if (~(index = arg.indexOf('='))) {
-                flag = arg.substring(0, index);
-                value = arg.substr(index + 1);
-                if ((index = command._opts[flag]) !== undefined) {
-                    option = command.options[index];
-                    options[option.name] = value;
-                } else if (!unknowns) {
-                    unknowns = flag;
-                }
-            } else {
-                flag = arg;
-                if ((index = command._opts[flag]) !== undefined) {
-                    option = command.options[index];
-                    options[option.name] = null;
-                } else if (!unknowns) {
-                    unknowns = flag;
-                }
-            }
-        } else {
-            if (option) {
-                if (option.isArray) {
-                    options[option.name] = options[option.name] || [];
-                    options[option.name].push(arg);
-                } else if (option.isBoolean) {
-                    rest.push(arg);
-                    option = null;
-                } else {
-                    options[option.name] = arg;
-                    option = null;
-                }
-            } else {
-                rest.push(arg);
-            }
-        }
-    }
-
-    command.options.forEach(function (opt) {
-        if (!opt.optional && (options[opt.name] === undefined || options[opt.name] === null)) {
-            var message = language.error.requiredOption;
-            if (opt.description) message += '\n{1}: ' + opt.description;
-            exports.throwError(message, opt.flag, opt.name);
-        }
-
-        if (options[opt.name] === undefined) {
-            if (opt.noFlag && !!~args.indexOf(opt.noFlag)) {
-                options[opt.name] = false;
-            } else if (opt.default !== undefined) {
-                options[opt.name] = opt.default;
-            } else if (opt.isBoolean) {
-                options[opt.name] = false;
-            } else {
-                options[opt.name] = null;
-            }
-        } else if (options[opt.name] === null) {
-            if (opt.default !== undefined) {
-                options[opt.name] = opt.default;
-            } else if (opt.isBoolean) {
-                options[opt.name] = true;
-            }
-        } else {
-            if (opt.parse !== undefined) {
-                if (opt.isArray) {
-                    options[opt.name] = options[opt.name].map(function (value) {
-                        return opt.parse(value);
-                    })
-                } else {
-                    options[opt.name] = opt.parse(options[opt.name]);
-                }
-            }
-        }
-    });
-
-    command.subs.forEach(function (sub) {
-        var defaultValue = sub.ellipsis ? [] : null;
-        if (!sub.optional && (rest.length === 0 || /^-/.test(rest[0]))) {
-            var message = language.error.requiredArgument;
-            if (sub.description) message += '\n{0}: ' + sub.description;
-            exports.throwError(message, sub.name);
-        } else if (sub.optional && rest.length === 0) {
-            subs.push(sub.default || defaultValue);
-        } else if (sub.optional && /^-/.test(rest[0])) {
-            subs.push(sub.default || defaultValue);
-            if (!unknowns) unknowns = rest[0];
-        } else if (sub.ellipsis) {
-            var list = [];
-            while(rest.length && !/^-/.test(rest[0])) {
-                list.push(rest.shift());
-            }
-            subs.push(list);
-        } else {
-            subs.push(rest.shift());
-        }
-    });
-
-    this.args = rest;
-    for (var o in options) {
-        if (!options.hasOwnProperty(o)) continue;
-        this.options[o] = options[o];
-    }
-
-    return {name: name, args: subs.concat([options]), unknowns: unknowns};
-};
-
-/**
- * execute a sub command automatically if exists
- * this method is modified from commander.js
- */
-exports.execSubCommand = function () {
-    var ext = '.js';
-    var args = process.argv.slice(1);
-
-    // current exec script file
-    var file = args.shift();
-    // name of the sub command, like `pm-install`
-    var bin = path.basename(file, ext) + '-' + args[0];
-
-    // In case of globally installed, get the base dir where executable sub command file should be located at
-    var link = readLink(file);
-
-    // when symbol link is relative path
-    if (link !== file && link.charAt(0) !== '/') {
-        link = path.join(path.dirname(file), link)
-    }
-
-    var base = path.dirname(link);
-
-    // prefer local `./<bin>` to bin in the $PATH
-    var localBin = path.join(base, bin);
-
-    // whether bin file is a js script with explicit `.js` extension
-    var isExplicitJS = false;
-    if (fs.existsSync(localBin + ext)) {
-        bin = localBin + ext;
-        isExplicitJS = true;
-    } else if (fs.existsSync(localBin)) {
-        bin = localBin;
-    }
-
-    args = args.slice(1);
-
-    var proc;
-    if (process.platform !== 'win32') {
-        if (isExplicitJS) {
-            args.unshift(bin);
-            // add executable arguments to spawn
-            args = (process.execArgv || []).concat(args);
-
-            proc = spawn('node', args, { stdio: 'inherit', customFds: [0, 1, 2] });
-        } else {
-            proc = spawn(bin, args, { stdio: 'inherit', customFds: [0, 1, 2] });
-        }
-    } else {
-        args.unshift(bin);
-        proc = spawn(process.execPath, args, { stdio: 'inherit'});
-    }
-
-    proc.on('close', process.exit.bind(process));
-    proc.on('error', function(err) {
-        if (err.code == 'ENOENT') {
-            exports.throwError(language.error.notExist, bin);
-        } else if (err.code == 'EACCES') {
-            exports.throwError(language.error.notExecutable, bin);
-        }
-        process.exit(1);
-    });
-};
-
-/**
- * print error message on terminal
- * @param message
- */
-exports.throwError = throwError;
-
-exports.whenExit = function (callback) {
-    if (!callback || typeof callback !== 'function') return;
-
-    process.on('exit', callback);
-};
-
-function throwError(message) {
-    var args = Array.prototype.slice.call(arguments);
-    message = formatString.apply(null, args);
-    message = message.split('\n').map(function(s) { return '  ' + s }).join('\n');
-    console.error('\n' + message + '\n');
-    process.exit(1);
-}
-
-/**
- * format string with following arguments
- * @returns {String}
- */
-function formatString() {
-    if (arguments.length === 1) {
-        return String(arguments[0]);
-    } else if (arguments.length > 1) {
-        var args = Array.prototype.slice.call(arguments, 1);
-        return String(arguments[0]).replace(/{(\d+)}/g, function ($0, $1) {
-            return args[$1] || $0;
-        })
-    } else {
-        return '';
-    }
-}
-
-/**
- * read the symbolic link
- * this method is modified from graceful-readLink
- * @param {String} path
- * @returns {*}
- */
-function readLink(path) {
-    if (fs.lstatSync(path).isSymbolicLink()) {
-        return fs.readlinkSync(path);
-    } else {
-        return path;
-    }
-}
-
-/**
- * define the default command
- */
-exports.command('*');
-
-/**
- * define a custom help method
- */
-exports.customHelp = null;
-
-exports.showHelp = function() {
-    return commands['*'].showHelp();
-};
+module.exports = new Cmdu();

@@ -1,5 +1,6 @@
 var fs = require('fs');
 var path = require('path');
+var utils = require('../lib/utils');
 
 var lans = [];
 fs.readdirSync(__dirname).forEach(function(name) {
@@ -19,25 +20,9 @@ Object.defineProperty(language, 'setLan', {
                 lan = require(lan);
             }
 
-            extend(lan, language);
+            utils.extend(lan, language);
         }
     }
 });
 
 language.setLan('en-US');   // set the default language
-
-function extend(source, target) {
-    target = target || {};
-
-    for (var i in source) {
-        if (!source.hasOwnProperty(i)) continue;
-
-        if (typeof source[i] === 'object') {
-            target[i] = extend(source[i]);
-        } else {
-            target[i] = source[i];
-        }
-    }
-
-    return target;
-}

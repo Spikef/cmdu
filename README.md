@@ -7,7 +7,7 @@
 [![cmdu starter](https://img.shields.io/badge/cmdu-starter-brightgreen.svg)](https://www.npmjs.org/package/cmdu-cli)
 
 
-A comfortable way to create your command line app in `node.js`.
+A comfortable way to create your command line app with `node.js`.
 
 [点此阅读中文文档](https://github.com/Spikef/cmdu/blob/master/README_CN.md)
 

@@ -6,20 +6,41 @@
 [![NPM Downloads](https://img.shields.io/npm/dm/cmdu.svg?style=flat)](https://www.npmjs.org/package/cmdu)
 [![cmdu starter](https://img.shields.io/badge/cmdu-starter-brightgreen.svg)](https://www.npmjs.org/package/cmdu-cli)
 
-
 A comfortable way to create your command line app with `node.js`.
 
-[点此阅读中文文档](https://github.com/Spikef/cmdu/blob/master/README_CN.md)
+[点此阅读中文文档](/README_CN.md)
 
-## Installation
+## Install
 
-    $ npm install cmdu
+```bash
+$ npm install cmdu
+```
 
 or install a global cli to quickly start
 
-    $ npm install cmdu-cli -g
+```bash
+$ npm install cmdu-cli -g
+```
 
-## version
+## Usage
+
+```javascript
+#!/usr/bin/env node
+
+var app = require('cmdu');
+
+// do something as you like
+
+app.listen();   // listen the user input at last
+```
+
+## App properties
+
+### app.name
+
+The `app.name` is only used by the `app.toSource()` method.
+
+### app.version
 
 Set the app version.
 
@@ -34,395 +55,368 @@ app.version = '0.0.1';
 // prints: 0.0.1
 ```
 
-## Option
+### app.allowUnknowns
 
-Options are defined with the `.option()` method, also serving as documentation for the options. The example below parses args and options from `process.argv`, leaving remaining args as the `app.args` array which were not consumed by options.
+By default, the app would throw an error when user typed an undefined argument or option. You can set `app.allowUnknowns = true` to allow this.
 
-```js
-#!/usr/bin/env node
+### app.language
 
-var app = require('cmdu');
-
-app.version = '0.0.1';
-
-app
-  .describe('An application for pizzas ordering')
-  .option('-p, --peppers', 'Add peppers')
-  .option('-P, --pineapple', 'Add pineapple')
-  .option('-b, --bbq', 'Add bbq sauce')
-  .option('-c, --cheese [type]', 'Add the specified type of cheese [marble]')
-  .listen();
-
-console.log('you ordered a pizza with:');
-if (app.options.peppers) console.log('  - peppers');
-if (app.options.pineapple) console.log('  - pineapple');
-if (app.options.bbq) console.log('  - bbq');
-
-var cheese = true === app.options.cheese
-  ? 'marble'
-  : app.options.cheese || 'no';
-
-console.log('  - %s cheese', cheese);
-console.log(app.args);
-```
-
-### Option flags
-
-The flags contains three parts: short flag(optional), long flag(required) and option property(optional).
-
-Short flags may be passed as a single arg, for example `-abc` is equivalent to `-a -b -c`.
-
-Long flags will be passed as the option name to the `options` object. Multi-word options such as "--template-engine" are camel-cased, becoming `app.options.templateEngine` etc.
-
-Option property is used to specify this option is `[optional]` or `<required>`. If user forget the required option, it will print an error information. If user didn't pass any value to an optional option, the value would be the default value or null. Specially while you define the property as `[array]` or `<array>`, this option will be an array. If you didn't specify the option property, this option would be regarded as a boolean value.
+You can set the `app.language` to support multiple languages. You may want to get more info from the `language` directory.
 
 ```javascript
+// a predefined language name
+app.language = 'zh-CN';     // can be 'zh-CN, en-US'
+
+// or full language object
+app.language = {};
+```
+
+## App methods
+
+### app.toSource()
+
+Return the full input for current command.
+
+### app.listen()
+
+Listen the user input and parse the process.argv, and execute the relative command.
+
+This is not always required, you can ignore it if you have no asynchronous action, the `listen` will be run automatically when process exit if you didn't `listen`.
+
+### app.command()
+
+Define a new command and return a `Command` object, view [Command](#Command) for details.
+
+### app.extends()
+
+Extends a existing command, or create a new one if not exists.
+
+### app.log()
+
+Use the `render` method of [cubb](https://github.com/Spikef/cubb) to print strings to terminal.
+
+## Command
+
+A command includes the definition(cmd), name(name), description(description), configs, [arguments](#Command arguments) and [options](#Command options).
+
+The full syntax for defining a new command:
+
+```javascript
+app.command(cmd, description, options);
+```
+
+**cmd**
+
+The `cmd` is a string with several parts separated by space. The first part is the command name, and the rest parts are command's arguments. That means the [default command](#Default command) if you omit the first part.
+
+**description**
+
+The `description` of a command is useful for building help information automatically. Also you can use `options.description` to specify it.
+
+**configs**
+
+The `configs` is used to define some extra configs for the command.
+
++ configs.noHelp: Boolean, `true` for removing this command from the auto generated help output.
++ configs.isBase: Boolean, `true` means the command is only a definition as a mixin but not a real one
++ configs.mixins: Array of some command's name, the command would extend their options automatically
+
+Example:
+
+```js
 #!/usr/bin/env node
 
 var app = require('cmdu');
 
-app.version = '0.0.1';
-
 app
-  .option('-d, --drink <array>', 'Which drinks would you like')
-  .listen();
+    .command('<cmd> [env=Linux]')
+    .describe('A demo for redefine the default command')
+    .describe('cmd', 'Can be init, install, uninstall, publish')
+    .action(function (cmd, env, options) {
+        console.log(cmd);
+        console.log(env);
+    });
+    
+app
+    .command('install [name]')
+    .describe('install a module')
+    .describe('name', 'the module name')
+    .alias('ins, i')
+    .action(function(name, options) {
+        if (name) {
+            // install the specify module
+        } else {
+            // install according to package.json
+        }
+    });
+    
+app
+    .command('rmdir <dir> [...otherDirs]')
+    .action(function (dir, otherDirs) {
+        console.log('rmdir %s', dir);
+        otherDirs.forEach(function (oDir) {
+            console.log('rmdir %s', oDir);
+        });
+    });
 
-console.log(app.options);
-
-// node index -d coke coffee tea water
-// prints:
-// {
-//     drink: ['coke', 'coffee', 'tea', 'water']
-// }
+app.listen();
 ```
 
-### Option parse and default value
+### Command arguments
 
-If you give a function as the third argument, the option will be parsed by this function. And the fourth argument will be the default value.
+A argument includes the name(name), description(description), required or not, type and default value.
 
-If the third argument is not a function, it will be treated as the default value.
+#### Optional or required
 
-```js
+The argument value is required by default. And you can also declare it as `[optional]` or `<required>` explicitly. It would throw an error if users forgot to give the required argument a value unless `app.allowUnknowns = true`.
+
+Note: `[optional]` arguments should be defined after `<required>` ones.
+
+#### Type of arguments
+
+Argument value can be string or array. Just prepend '...' to the argument name to declare it as an array type.
+
+Note: only the last argument can be declared as array.
+
+#### Default value of arguments
+
+You can specify a default value according to append the `=defaultValue` to the argument name.
+
+If you didn't specify a default value, it should be:
+
++ for string type, a empty string
++ for array type, a empty array
+
+#### Passing values to arguments
+
+When passing values, the input order of arguments and options are not limited.
+
+**String**
+
+One by one according to the order of definitions.
+
+**Array**
+
+Values are separated by space.
+
+### Command options
+
+You can use `.option()` to add an option to the current command.
+
+A option includes the definition(opt), name(name), description(description), required or not, type, parse function and default value.
+
+The full syntax for defining a option:
+
+```javascript
+command.option(flags, description, parseFn, defaultValue);
+```
+
+**flags**
+
+The `flags` contains three parts: short flag(optional), long flag(required) and option attribute(optional).
+
+The option's name will be the same as the long flag without `--` or `--no-`. Multiple words connected with `-` such as "--template-engine" will be camel cased, becoming to `app.options.templateEngine`.
+
+Option attribute is used to specify that this option is `[optional]` or `<required>`.
+
+**description**
+
+The `description` of a option is useful for building help information automatically.
+
+**parseFn**
+
+A function to parse the option's value, it's optional.
+
+**defaultValue**
+
+The option's default value.
+
+Example:
+
+```javascript
 #!/usr/bin/env node
 
 var app = require('cmdu');
 
 function range(val) {
-  return val.split('..').map(Number);
+    return val.split('-').map(Number);
 }
 
 function list(val) {
-  return val.split(',');
+    return val.split(', ');
 }
 
-app.version = '0.0.1';
-
+// parse and default value for options
 app
-  .option('-i, --integer <n>', 'An integer argument', parseInt)
-  .option('-f, --float <n>', 'A float argument', parseFloat)
-  .option('-r, --range <a>..<b>', 'A range', range)
-  .option('-l, --list <items>', 'A list', list)
-  .option('-o, --optional [value]', 'An optional value', 'default value')
-  .option('-c, --collect <array>', 'A repeatable value', [])
-  .listen();
-
-console.log(' int: %j', app.options.integer);
-console.log(' float: %j', app.options.float);
-console.log(' optional: %j', app.options.optional);
-app.options.range = app.options.range || [];
-console.log(' range: %j..%j', app.options.range[0], app.options.range[1]);
-console.log(' list: %j', app.options.list);
-console.log(' collect: %j', app.options.collect);
-console.log(' args: %j', app.args);
-```
-
-## Command
-
-Sub commands are defined with the `.command()` method.
-
-### Command arguments
-
-The command arguments is a string seperated by space. The first part is the sub command's name. The other parts are the sub command's arguments.
-
-```javascript
-#!/usr/bin/env node
-
-var app = require('cmdu');
-app.command('test');
-```
-
-### Specify the argument syntax
-
-```js
-#!/usr/bin/env node
-
-var app = require('../');
-
-app.version = '0.0.1';
-
-app
-    .command('* <cmd> [env]')
-    .describe('A demo for redefine the default command')
-    .describe('cmd', 'Can be init, install, uninstall, publish')
-    .option('-h, --help', 'output the help information')
-    .option('-v, --version', 'output the version number')
-    .action(function (cmd, env, options) {
-        console.log(cmd);
-        console.log(env);
-
-        if (options.version) console.log(app.version);
-    });
-
-app.listen();
-```
-Angled brackets (e.g. `<cmd>`) indicate required input.
-Square brackets (e.g. `[env]`) indicate optional input.
-
-### Variadic arguments
-
-The last argument of a command can be variadic, and only the last argument.  To make an argument variadic you have to prepend `...` to the argument name.  Here is an example:
-
-```js
-#!/usr/bin/env node
-
-var app = require('cmdu');
-
-app.version = '0.0.1';
-
-app
-  .command('rmdir <dir> [...otherDirs]')
-  .action(function (dir, otherDirs) {
-    console.log('rmdir %s', dir);
-    if (otherDirs) {
-      otherDirs.forEach(function (oDir) {
-        console.log('rmdir %s', oDir);
-      });
-    }
-  });
-
-app.listen();
-```
-
-An `Array` is used for the value of a variadic argument.
-
-### The default command
-
-The default command named `'*'` is defined after you required `cmdu`. You can redefine it as you like.
-
-### The `--harmony`
-
-You can enable `--harmony` option in two ways:
-* Use `#! /usr/bin/env node --harmony` in the sub-commands scripts. Note some os version don’t support this pattern.
-* Use the `--harmony` option when call the command, like `node --harmony examples/pm publish`. The `--harmony` option will be preserved when spawning sub-command process.
-
-### Options argument
-
-Options can be passed with the call to `.command()`. Specifying `true` for `opts.noHelp` will remove this command from the generated help output.
-
-If `opts` is string or specify `opts.description`, this value will be used as description for this command.
-
-## alias
-
-The `.alias()` method is used for adding alias name for current command. You can specify more than one alias name.
-
-```javascript
-#!/usr/bin/env node
-
-var app = require('cmdu');
-
-app.version = '0.0.1';
-
-app
-    .command('install [name]')
-    .describe('install a module')
-    .describe('name', 'the module name')
-    .alias('ins')
-    .alias('i')
-    .action(function(name, options) {
-        if (name) {
-            // install the specify module
-        }else{
-            // install according to package.json
-        }
-    });
-
-app.listen();
-```
-
-## describe
-
-The `.describe()` method is used for adding description for sub command and arguments. The descriptions will show when `--help` passed.
-
-## action
-
-The `.action()` method uses a callback function or it's file path to handle this command.
- 
-### callback function
-
-The defined command arguments are passed in, and the last argument is a json object contains all options.
-
-## file path
-
-Mostly like the callback function, you can also use the function module file path as the argument.
-
-```javascript
-#!/usr/bin/env node
-
-var app = require('cmdu');
-
-app.version = '0.0.1';
-
-app
-  .command('install <name>')
-  .action('./install');
-
-app.listen();
-```
-
-## Git-style sub-commands
-
-When a command is defined without `action`, this command will be treated as a git-style sub-command. This tells `cmdu` that you're going to use separate executables for sub-commands, much like `git(1)` and other popular tools.
-The `cmdu` will try to search the executables in the directory of the entry script (like `./examples/pm`) with the name `app-command`, like `pm-install`, `pm-search`.
-
-If the program is designed to be installed globally, make sure the executables have proper modes, like `755`.
-
-```javascript
-// file: ./examples/pm
-var app = require('cmdu');
-
-app
-  .command('install [name]', 'install one or more packages')
-  .command('search [query]', 'search with optional query')
-  .command('list', 'list packages installed', {noHelp: true})
-  .listen();
-```
-
-## listen
-
-Listen the command input and parse arguments.
-
-## Auto Help
-
-The help information is auto-generated based on the descriptions, so the following `--help` info is for free:
-
-```
- $ ./examples/pizza --help
-
-  Usage: pizza [options]
-
-  An application for pizzas ordering
-
-  Options:
-
-    -h, --help            output the help information
-    -v, --version         output the version number
-    -p, --peppers         Add peppers
-    -P, --pineapple       Add pineapple
-    -b, --bbq             Add bbq sauce
-    -c, --cheese [type]   Add the specified type of cheese [marble]
-
-
-```
-
-## Custom Help
-
-You can use the `.customHelp()` method to output custom help message or handle the help message for each command.
-
-```js
-#!/usr/bin/env node
-
-var app = require('../');
-
-app.version = '0.0.1';
-
-app
-  .option('-f, --foo', 'enable some foo')
-  .option('-b, --bar', 'enable some bar')
-  .option('-B, --baz', 'enable some baz');
-
-// must be before .listen() since the help is immediate
-
-app.customHelp = function () {
-    var example;
-    example = this.language.help.title.example;
-    example = this.setStyle(example, 'bold', 'underline');
-
-    this.showHelp(function (message) {
-        message = [message].concat([
-            '  ' + example,
-            '',
-            '    $ custom-help --help',
-            '    $ custom-help -h',
-            ''
-        ]).join('\n');
-
-        return message;
-    });
-};
-
-app.listen();
-```
-
-Yields the following help output when `node script-name.js -h` or `node script-name.js --help` are run:
-
-```
-
-Usage: custom-help [options]
-
-Options:
-
-  -h, --help     output usage information
-  -V, --version  output the version number
-  -f, --foo      enable some foo
-  -b, --bar      enable some bar
-  -B, --baz      enable some baz
-
-Examples:
-
-  $ custom-help --help
-  $ custom-help -h
-
-```
-
-## Show Help
-
-There are two ways to show help information manually.
-
-```javascript
-var app = require('cmdu');
-
-app.version = '0.0.1';
-
-app
-    .command('help')
-    .describe('show help information for this command')
-    .option('-s --show', 'show help information or not')
+    .command()
+    .option('-i, --integer <n>', 'An integer argument', parseInt)
+    .option('-f, --float <n>', 'A float argument', parseFloat)
+    .option('-r, --range <m>-<n>', 'A range', range)
+    .option('-l, --list <items1, items2, ...>', 'A list', list)
+    .option('-o, --optional [value]', 'An optional value', 'default value')
+    .option('-c, --collection <...collections>', 'A repeatable value', parseInt, [])
     .action(function(options) {
-        this.showHelp();    // show help for current command
+        console.log(' int: %j', options.integer);
+        console.log(' float: %j', options.float);
+        console.log(' range: from %j to %j', options.range[0], options.range[1]);
+        console.log(' list:', options.list);
+        console.log(' optional: %j', options.optional);
+        console.log(' collection:', options.collection);
     });
-
-if (!process.argv.slice(2).length) {
-    app.showHelp();         // show help for default command
-}
 
 app.listen();
 ```
 
-## Multiple language support
+#### Optional or required
 
-You can set the language as you like. You may want to get more info from the `language` directory.
+The option value is optional by default. And you can also declare it as `[optional]` or `<required>` explicitly. It would throw an error if users forgot to give the required option a value unless `app.allowUnknowns = true`.
 
-```javascript
-// a predefined language name
-app.language('zh-CN');     // can be 'zh-CN, en-US'
+#### Type of options
 
-// or full language object
-app.language({});
+Option value can be boolean(default), string or array. Just prepend '...' to the option name to declare it as an array type.
+
+#### Default value of options
+
+You can specify a default value when define.
+
+If you didn't specify a default value, it should be:
+
++ for boolean type, false, or true when with `--no-`
++ for string type, a empty string
++ for array type, a empty array
+
+#### Passing values to options
+
+When passing values, the input order of arguments and options are not limited.
+
+**Boolean**
+
+Suppose there is an option `-o, --options`, it would be `true` under the following condition:
+
+* `-o` or `--options`
+* `-o=true` or `--options=true`
+* `-o true` or `--options true`
+
+or `false` under the following condition:
+
+* `--no-options`
+* `-o=false` or `--options=false`
+* `-o false` or `--options false`
+
+**String**
+
+Following the option flag.
+
+**Array**
+
+Following the option flag, values are separated by space.
+
+### Alias name
+
+You can use `.alias(aliases)` to specify one or more alias names for the current command.
+
+The argument `aliases` can be an array or a string(in this condition you should use `,` or `|` to separate the multiple aliases).
+
+### Descriptions
+
+You can use `.describe(arg, description)` to specify description for the command or it's arguments.
+
+It adds the description for the current command when no `arg` is specified, otherwise for the `arg`.
+
+### Hander of the command
+
+You can use `.action(handler)` to defined a handler to response the user's input. You can pass a callback function or it's file path.
+
+#### Arguments of the callback
+
+The command's arguments will also be the callback's arguments, and the next argument is a json object stores all the command's options, the last argument is also a json object which contains some useful command line args object.
+
+#### Context of the callback
+
+Inside the callback function, `this` will point to the current command, which means you can use `this` to obtain all properties and methods of the current command.
+
+### Default command
+
+There is an anonymous default command that takes over all undefined command inputs. This command has no handler by default, and can be redefined as needed.
+
+## Help information
+
+### Auto generated help
+
+The help information is auto generated based on the descriptions. So when users typed `-h` or `--help` after a command, it would display the help information automatically.
+
+```text
+ $ node ./examples/npm uninstall -h
+
+  About
+
+    This uninstalls a package, completely removing everything npm installed on its behalf.
+
+  Usage
+
+    npm uninstall|remove|rm|r|un|unlink <packages> [options]                              
+
+  Arguments
+
+    packages                                                                      
+
+  Options
+
+    -S, --save             Package will be removed from your dependencies.        
+    -D, --save-dev         Package will be removed from your devDependencies.     
+    -O, --save-optional    Package will be removed from your optionalDependencies.
+    -h, --help             output the help information                            
+
 ```
 
-## Demos
+### Custom help
 
-More Demos can be found in the [examples](https://github.com/Spikef/cmdu/tree/master/examples) directory. These examples are modified from Commander.
+You can use `.customHelp()` to make a custom help information. You should pass a callback to this function, and the auto generated help would be the first argument for this callback, you should return a new string as the custom help.
+
+You can use the [cubb](https://github.com/Spikef/cubb) syntax to style the help information.
+
+```js
+#!/usr/bin/env node
+
+var app = require('cmdu');
+
+app
+    .command()
+    .option('-f, --foo', 'enable some foo')
+    .option('-b, --bar', 'enable some bar')
+    .option('-B, --baz', 'enable some baz')
+    .customHelp(function(help) {
+        help = help + '\n\n' + [
+            '| [example] |',
+            '| $ help --help |',
+            '| $ help -h |'
+        ].join('\n');
+
+        return help;
+    });
+
+app.listen();
+```
+
+### Show help manually
+
+You can use `.showHelp()` to display help information manually.
+
+```javascript
+var app = require('cmdu');
+
+app
+    .command()
+    .action(function() {
+        this.showHelp();    // Show help for current command
+    });
+
+app.listen();
+```
+
+## Examples
+
+More examples can be found under the [examples](https://github.com/Spikef/cmdu/tree/master/examples) directory. 
 
 ## License
 

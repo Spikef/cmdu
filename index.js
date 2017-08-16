@@ -7,6 +7,7 @@ var log = require('./lib/log');
 var utils = require('./lib/utils');
 var Command = require('./lib/command');
 var language = require('./language');
+var listening = false;  // listen manually
 
 var Cmdu = function() {
     this.log = log;
@@ -104,6 +105,8 @@ Cmdu.prototype.toSource = function() {
  * @param {Array} [argv]: process.argv
  */
 Cmdu.prototype.listen = function(argv) {
+    listening = true;
+
     argv = argv || process.argv;
     var cmd = argv[2] || '*';
     if (cmd !== '*') {
@@ -130,3 +133,9 @@ Cmdu.prototype.listen = function(argv) {
 };
 
 module.exports = new Cmdu();
+
+process.once('exit', function() {
+    if (!listening) {
+        module.exports.listen();
+    }
+});

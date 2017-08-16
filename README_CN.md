@@ -79,6 +79,8 @@ app.language = {};
 
 监听用户输入，该方法将自动解析用户输入，并执行命令对应的方法。
 
+并非所有情况下都需要调用`listen`方法，如果你的代码里面没有异步操作，则可以省略调用`listen`方法，当进程结束时，该方法将被自动调用。
+
 ### app.command()
 
 定义一个新命令并返回一个`Command`对象，详见[定义命令](#定义命令)。
@@ -89,7 +91,7 @@ app.language = {};
 
 ### app.log()
 
-使用[cubb](https://www.npmjs.com/package/cubb)的`render`方法向命令行输出字符串。
+使用[cubb](https://github.com/Spikef/cubb)的`render`方法向命令行输出字符串。
 
 ## 定义命令
 
@@ -370,7 +372,7 @@ app.listen();
 
 你可以使用`.customHelp()`方法来自定义帮助信息，该方法需要传入一个回调函数，回调函数的参数为自动生成的帮助信息字符串，返回值为新的帮助内容。
 
-帮助信息可以使用[cubb](https://www.npmjs.com/package/cubb)语法来自定义样式。
+帮助信息可以使用[cubb](https://github.com/Spikef/cubb)语法来自定义样式。
 
 ```js
 #!/usr/bin/env node

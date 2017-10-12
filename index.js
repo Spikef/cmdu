@@ -18,9 +18,15 @@ var Cmdu = function() {
 
     this.command();
 
+    var that = this;
     Object.defineProperty(this, 'language', {
         set: function(lan) {
             language.setLan(lan);
+            for (var i in that.commands) {
+                /* istanbul ignore if */
+                if (!that.commands.hasOwnProperty(i)) continue;
+                that.commands[i].__help__ = null;
+            }
         }
     });
 };
@@ -91,10 +97,11 @@ Cmdu.prototype.extends = function(cmd, description, options) {
  * @returns {string}
  */
 Cmdu.prototype.toSource = function() {
+    /* istanbul ignore else  */
     if (!this._source) {
         var args = process.argv.slice(2);
         var name = this.name || utils.basename(process.argv[1]);
-        this._source = name + args.join(' ');
+        this._source = name + ' ' + args.join(' ');
     }
 
     return this._source;
@@ -134,6 +141,7 @@ Cmdu.prototype.listen = function(argv) {
 
 module.exports = new Cmdu();
 
+/* istanbul ignore next */
 process.once('exit', function() {
     if (!listening) {
         module.exports.listen();

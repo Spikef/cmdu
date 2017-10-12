@@ -15,6 +15,7 @@ Object.defineProperty(language, 'setLan', {
     get: function() {
         return function(lan) {
             if (typeof lan === 'string') {
+                /* istanbul ignore if */
                 if (!~lans.indexOf(lan)) lan = 'en-US';
                 lan = path.resolve(__dirname, lan + '.lan.js');
                 lan = require(lan);

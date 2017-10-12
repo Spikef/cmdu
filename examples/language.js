@@ -26,7 +26,8 @@ app.language = {
         expectFunOrStr: '錯誤: 只接受回調函數或模塊文件路徑作為action的參數',
         unknownInput: '錯誤: 未知輸入 "{0}"',
         requiredOption: '錯誤: 缺少選項 "{0}"',
-        requiredArgument: '錯誤: 缺少參數 "{0}"'
+        requiredArgument: '錯誤: 缺少參數 "{0}"',
+        requiredAfterOptional: '錯誤：不能在可選參數  "{0}" 後面定義必選參數  "{1}"'
     }
 };
 

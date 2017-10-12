@@ -20,6 +20,7 @@ module.exports = {
         expectFunOrStr: 'error: expect a function/file for the action',
         unknownInput: 'error: unknown input "{0}"',
         requiredOption: 'error: missing required option "{0}"',
-        requiredArgument: 'error: missing required argument "{0}"'
+        requiredArgument: 'error: missing required argument "{0}"',
+        requiredAfterOptional: 'error: don\'t define the required argument "{1}" after the optional "{0}"'
     }
 };

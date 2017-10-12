@@ -1,7 +1,7 @@
 # cmdu
 
 [![Build Status](https://travis-ci.org/Spikef/cmdu.svg?branch=master)](https://travis-ci.org/Spikef/cmdu)
-[![Coverage Status](https://coveralls.io/repos/github/Spikef/cmdu/badge.svg)](https://coveralls.io/github/Spikef/cmdu)
+[![Coverage Status](https://coveralls.io/repos/github/Spikef/cmdu/badge.svg?branch=master)](https://coveralls.io/github/Spikef/cmdu?branch=master)
 [![NPM Version](http://img.shields.io/npm/v/cmdu.svg?style=flat)](https://www.npmjs.org/package/cmdu)
 [![NPM Downloads](https://img.shields.io/npm/dm/cmdu.svg?style=flat)](https://www.npmjs.org/package/cmdu)
 [![cmdu starter](https://img.shields.io/badge/cmdu-starter-brightgreen.svg)](https://www.npmjs.org/package/cmdu-cli)

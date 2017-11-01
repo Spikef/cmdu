@@ -24,4 +24,24 @@ app
         }
     });
 
+app
+    .command('help [command]', 'show command\'s help')
+    .action(function(options, result) {
+        if (!result.argv.length) {
+            // show help manually
+            this.showHelp();
+        } else {
+            console.log(options);
+        }
+    })
+    .customHelp(function(help) {
+        help = help + '\n\n' + [
+            '| [example] |',
+            '| $ help --help |',
+            '| $ help -h |'
+        ].join('\n');
+
+        return help;
+    });
+
 app.listen();

@@ -248,7 +248,6 @@ function list(val) {
 
 // parse and default value for options
 app
-    .command()
     .option('-i, --integer <n>', 'An integer argument', parseInt)
     .option('-f, --float <n>', 'A float argument', parseFloat)
     .option('-r, --range <m>-<n>', 'A range', range)
@@ -382,7 +381,6 @@ app.listen();
 var app = require('cmdu');
 
 app
-    .command()
     .option('-f, --foo', 'enable some foo')
     .option('-b, --bar', 'enable some bar')
     .option('-B, --baz', 'enable some baz')
@@ -407,7 +405,6 @@ app.listen();
 var app = require('cmdu');
 
 app
-    .command()
     .action(function() {
         this.showHelp();    // 显示当前命令的帮助信息
     });

@@ -67,6 +67,8 @@ Cmdu.prototype.command = function(cmd, description, options) {
         }
     });
 
+    this._command = command;
+
     return command;
 };
 
@@ -137,6 +139,36 @@ Cmdu.prototype.listen = function(argv) {
         var args = argv.slice(cmd === '*' ? 2 : 3);
         this.commands[cmd].execute(args);
     }
+};
+
+// alias for command.alias
+Cmdu.prototype.alias = function(name) {
+    return this._command.alias(name);
+};
+
+// alias for command.describe
+Cmdu.prototype.describe = function(cmd, description) {
+    return this._command.describe(cmd, description);
+};
+
+// alias for command.option
+Cmdu.prototype.option = function(opt, description, parse, defaultValue) {
+    return this._command.option(opt, description, parse, defaultValue);
+};
+
+// alias for command.action
+Cmdu.prototype.action = function(callback) {
+    return this._command.action(callback);
+};
+
+// alias for command.showHelp
+Cmdu.prototype.showHelp = function() {
+    return this._command.showHelp();
+};
+
+// alias for command.customHelp
+Cmdu.prototype.customHelp = function(callback) {
+    return this._command.customHelp(callback);
 };
 
 module.exports = new Cmdu();

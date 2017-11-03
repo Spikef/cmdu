@@ -248,7 +248,6 @@ function list(val) {
 
 // parse and default value for options
 app
-    .command()
     .option('-i, --integer <n>', 'An integer argument', parseInt)
     .option('-f, --float <n>', 'A float argument', parseFloat)
     .option('-r, --range <m>-<n>', 'A range', range)
@@ -381,7 +380,6 @@ You can use the [cubb](https://github.com/Spikef/cubb) syntax to style the help 
 var app = require('cmdu');
 
 app
-    .command()
     .option('-f, --foo', 'enable some foo')
     .option('-b, --bar', 'enable some bar')
     .option('-B, --baz', 'enable some baz')
@@ -406,7 +404,6 @@ You can use `.showHelp()` to display help information manually.
 var app = require('cmdu');
 
 app
-    .command()
     .action(function() {
         this.showHelp();    // Show help for current command
     });

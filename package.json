@@ -1,6 +1,6 @@
 {
   "name": "cmdu",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "A comfortable way to create your command line app with nodejs.",
   "main": "index.js",
   "scripts": {

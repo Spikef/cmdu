@@ -6,7 +6,6 @@ app.language = 'en-US';
 app.allowUnknowns = true;
 
 app
-    .command()
     .describe('Node packages management')
     .action(function() {
         this.showHelp();

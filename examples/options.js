@@ -10,7 +10,6 @@ function list(val) {
 
 // parse and default value for options
 app
-    .command()
     .option('-i, --integer <n>', 'An integer argument', parseInt)
     .option('-f, --float <n>', 'A float argument', parseFloat)
     .option('-r, --range <m>-<n>', 'A range', range)

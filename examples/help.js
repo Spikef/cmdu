@@ -25,7 +25,7 @@ app
 
 app
     .command('help [command]', 'show command\'s help')
-    .action(function(options, result) {
+    .action(function(command, options, result) {
         if (!result.argv.length) {
             // show help manually
             this.showHelp();
@@ -37,7 +37,7 @@ app
         help = help + '\n\n' + [
             '| [example] |',
             '| $ help --help |',
-            '| $ help -h |'
+            '| $ help -ww |'
         ].join('\n');
 
         return help;

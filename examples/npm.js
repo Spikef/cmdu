@@ -51,4 +51,11 @@ app
     .option('-O, --save-optional', 'Package will be removed from your optionalDependencies.')
     .action('npm/uninstall');
 
+app
+    .command('publish [tarball|folder]', 'Publishes a package to the registry so that it can be installed by name.')
+    .alias('pu')
+    .describe('tarball|folder', 'A folder containing a package.json file OR A url or file path to a gzipped tar archive containing a single folder with a package.json file inside.')
+    .option('--tag [tag]', 'Registers the published package with the given tag', 'latest')
+    .action('npm/publish');
+
 app.listen();

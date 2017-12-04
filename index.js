@@ -15,6 +15,7 @@ var Cmdu = function() {
     this.version = null;
     this.commands = {};
     this.allowUnknowns = false;
+    this.allowTolerance = false;
 
     this.command();
 
@@ -117,17 +118,55 @@ Cmdu.prototype.listen = function(argv) {
     listening = true;
 
     argv = argv || process.argv;
-    var cmd = argv[2] || '*';
-    if (cmd !== '*') {
-        cmd = '*';
+    var cmd = argv[2];
+    var name = cmd || '*';
+    if (name !== '*') {
+        name = '*';
+
+        var cmdList = [], cmdMaps = {};
 
         for (var i in this.commands) {
             if (!this.commands.hasOwnProperty(i)) continue;
-            if (~this.commands[i].aliases.indexOf(argv[2])) {
-                if (!this.commands[i].__isBase__) {
-                    cmd = this.commands[i].aliases[0];
-                }
+
+            var command = this.commands[i];
+            if (command.name === '*' || command.__isBase__) continue;
+
+            if (~command.aliases.indexOf(cmd)) {
+                name = command.name;
                 break;
+            }
+
+            command.aliases.forEach(function(alias) {
+                cmdList.push(alias);
+                cmdMaps[alias] = command.name;
+            });
+        }
+
+        if (name === '*' && this.allowTolerance) {
+            var include, exclude, excluded;
+            if (exclude = this.allowTolerance.exclude) {
+                if (Array.isArray(exclude) && ~exclude.indexOf(cmd)) {
+                    excluded = true;
+                }
+            }
+
+            if (!excluded) {
+                if (include = this.allowTolerance.include) {
+                    if (typeof include === 'object') {
+                        for (var key in include) {
+                            if (!include.hasOwnProperty(key)) continue;
+                            cmdList.push(key);
+                            cmdMaps[key] = include[key];
+                        }
+                    }
+                }
+
+                var abbrev = require('abbrev');
+                var maybes = abbrev(cmdList);
+
+                if (maybes[cmd]) {
+                    name = cmdMaps[maybes[cmd]];
+                }
             }
         }
     }
@@ -136,8 +175,8 @@ Cmdu.prototype.listen = function(argv) {
         console.log(this.version);
         process.exit(0);
     } else {
-        var args = argv.slice(cmd === '*' ? 2 : 3);
-        this.commands[cmd].execute(args);
+        var args = argv.slice(name === '*' ? 2 : 3);
+        this.commands[name].execute(args);
     }
 };
 

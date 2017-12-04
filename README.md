@@ -59,6 +59,10 @@ app.version = '0.0.1';
 
 By default, the app would throw an error when user typed an undefined argument or option. You can set `app.allowUnknowns = true` to allow this.
 
+### app.allowTolerance
+
+By default, the user must input the command exactly to execute, but you can set `app.allowTolerance = true` to allow a similarity.
+
 ### app.language
 
 You can set the `app.language` to support multiple languages. You may want to get more info from the `language` directory.

@@ -4,6 +4,13 @@ app.name = 'npm';
 app.version = '1.0.0';
 app.language = 'en-US';
 app.allowUnknowns = true;
+// app.allowTolerance = true;
+app.allowTolerance = {
+    include: {
+        isntall: 'install'
+    },
+    exclude: ['ins']
+};
 
 app
     .describe('Node packages management')
